@@ -29,13 +29,12 @@ from playwright.sync_api import (
 
 def pytest_generate_tests(metafunc: Any) -> None:
     if "browser_name" in metafunc.fixturenames:
-        browsers = metafunc.config.option.browser or ["chromium"]
-        for browser in browsers:
-            if browser not in ["chromium", "firefox", "webkit"]:
-                raise ValueError(
-                    f"'{browser}' is not allowed. Only chromium, firefox, or webkit are valid browser names."
-                )
-        metafunc.parametrize("browser_name", browsers, scope="session")
+        browser = metafunc.config.option.browser
+        if browser not in ["chromium", "firefox", "webkit"]:
+            raise ValueError(
+                f"'{browser}' is not allowed. Only chromium, firefox, or webkit are valid browser names."
+            )
+        metafunc.parametrize("browser_name", browser, scope="session")
 
 
 def pytest_configure(config: Any) -> None:
@@ -183,8 +182,8 @@ def is_chromium(browser_name: str) -> bool:
 
 
 @pytest.fixture(scope="session")
-def browser_name() -> None:
-    return None
+def browser_name(pytestconfig: Any) -> str:
+    return pytestconfig.getoption("--browser")
 
 
 @pytest.fixture(scope="session")
@@ -196,8 +195,8 @@ def pytest_addoption(parser: Any) -> None:
     group = parser.getgroup("playwright", "Playwright")
     group.addoption(
         "--browser",
-        action="append",
-        default=[],
+        action="store",
+        default="chromium",
         help="Browser engine which should be used",
     )
     group.addoption(
